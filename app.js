@@ -8,11 +8,6 @@ const EMOTE_SIZE_IN_PX = 36;
 client.connect();
 
 client.on("message", (channel, tags, message, self) => {
-  // "Alca: Hello, World!"
-  // console.log(`${tags["display-name"]}: ${message}`);
-
-  // Escape if msg contains script
-  console.log(escapeHTML(message));
   const res = {
     user: tags["display-name"],
     emotes: tags["emotes"],
@@ -57,7 +52,7 @@ function showMessage(res) {
         const firstChild = chatbox.children[0];
         chatbox.insertBefore(div, firstChild);
 
-        // Destroy message
+        // Destroy message after 5 seconds
         setTimeout(() => div.remove(), 5000);
       });
     });
@@ -78,6 +73,7 @@ function escapeHTML(str) {
   );
 }
 
+// src: https://www.stefanjudis.com/blog/how-to-display-twitch-emotes-in-tmi-js-chat-messages/
 function getMessageHTMLForTwitch(message, { emotes }) {
   if (!emotes) return message;
 
