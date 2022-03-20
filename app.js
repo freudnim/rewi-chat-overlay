@@ -5,24 +5,24 @@ const TWITCH_ID = 701025846;
 
 const EMOTE_SIZE_IN_PX = 36;
 
-const queue = [];
-
 client.connect();
 
 client.on("message", (channel, tags, message, self) => {
   // "Alca: Hello, World!"
   // console.log(`${tags["display-name"]}: ${message}`);
-  console.log(tags);
-  const res = { user: tags["display-name"], emotes: tags["emotes"], message };
-  addToQueue(res);
+
+  // Escape if msg contains script
+  console.log(escapeHTML(message));
+  const res = {
+    user: tags["display-name"],
+    emotes: tags["emotes"],
+    message: escapeHTML(message),
+  };
+  showMessage(res);
 });
 
 function getRandomArbitrary(min, max) {
   return Math.random() * (max - min) + min;
-}
-
-function addToQueue(msg) {
-  queue.push(msg);
 }
 
 function showMessage(res) {
@@ -42,14 +42,11 @@ function showMessage(res) {
   const { user, emotes, message } = res;
 
   // Add emotes
-  console.log(message);
-  const twitchHTML = getMessageHTML(message, { emotes });
+  const twitchHTML = getMessageHTMLForTwitch(message, { emotes });
   div.innerHTML = twitchHTML;
-  getMessageHTMLAfterBTTV(twitchHTML).then((data) => {
-    console.log(data);
-
-    getMessageHTMLAfterBTTVGlobal(data).then((data2) => {
-      getMessageHTMLAfterFFZ(data2).then((data2) => {
+  getMessageHTMLForBTTV(twitchHTML).then((data) => {
+    getMessageHTMLForBTTVGlobal(data).then((data2) => {
+      getMessageHTMLForFFZ(data2).then((data2) => {
         div.innerHTML = data2;
 
         const firstChild = chatbox.children[0];
@@ -62,18 +59,21 @@ function showMessage(res) {
   });
 }
 
-function fetcher() {
-  if (queue.length > 0) {
-    var msg = queue.shift();
-    console.log(msg);
-    showMessage(msg);
-  }
-  setTimeout(fetcher);
+function escapeHTML(str) {
+  return str.replace(
+    /[&<>'"]/g,
+    (tag) =>
+      ({
+        "&": ".",
+        "<": ".",
+        ">": ".",
+        "'": ".",
+        '"': ".",
+      }[tag] || tag)
+  );
 }
 
-fetcher();
-
-function getMessageHTML(message, { emotes }) {
+function getMessageHTMLForTwitch(message, { emotes }) {
   if (!emotes) return message;
 
   // store all emote keywords
@@ -109,7 +109,7 @@ function getMessageHTML(message, { emotes }) {
   return messageHTML;
 }
 
-function getMessageHTMLAfterBTTV(messageHTML) {
+function getMessageHTMLForBTTV(messageHTML) {
   return new Promise((resolve, reject) => {
     $.ajax({
       url: `https://api.betterttv.net/3/cached/users/twitch/${TWITCH_ID}`,
@@ -117,26 +117,81 @@ function getMessageHTMLAfterBTTV(messageHTML) {
       success: function (res) {
         const bttvEmotes = [...res.sharedEmotes, ...res.channelEmotes];
         const codeToId = getEmoteCodeToIdMapping(bttvEmotes);
-
-        const splitMessageHTML = messageHTML.split(" ");
-        for (let i = 0; i < splitMessageHTML.length; i++) {
-          const word = splitMessageHTML[i];
-          if (codeToId[word]) {
-            console.log(splitMessageHTML[i], " must be changed.");
-            splitMessageHTML[
-              i
-            ] = `<img src="https://cdn.betterttv.net/emote/${codeToId[word]}/1x" width=${EMOTE_SIZE_IN_PX} height=${EMOTE_SIZE_IN_PX}/>`;
-          }
-        }
-
-        const newMessageHTML = splitMessageHTML.join(" ");
-        resolve(newMessageHTML);
+        const generatedHTML = generateHTMLMessageWithEmotes(
+          messageHTML,
+          codeToId,
+          "bttv"
+        );
+        resolve(generatedHTML);
       },
       error: function (error) {
         reject(error);
       },
     });
   });
+}
+
+function getMessageHTMLForBTTVGlobal(messageHTML) {
+  return new Promise((resolve, reject) => {
+    $.ajax({
+      url: "https://api.betterttv.net/3/cached/emotes/global",
+      type: "GET",
+      success: function (res) {
+        const codeToId = getEmoteCodeToIdMapping(res);
+        const generatedHTML = generateHTMLMessageWithEmotes(
+          messageHTML,
+          codeToId,
+          "bttv"
+        );
+        resolve(generatedHTML);
+      },
+      error: function (error) {
+        reject(error);
+      },
+    });
+  });
+}
+
+function getMessageHTMLForFFZ(messageHTML) {
+  return new Promise((resolve, reject) => {
+    $.ajax({
+      url: `https://api.betterttv.net/3/cached/frankerfacez/users/twitch/${TWITCH_ID}`,
+      type: "GET",
+      success: function (res) {
+        const codeToId = getEmoteCodeToIdMapping(res);
+        const generatedHTML = generateHTMLMessageWithEmotes(
+          messageHTML,
+          codeToId,
+          "ffz"
+        );
+        resolve(generatedHTML);
+      },
+      error: function (error) {
+        reject(error);
+      },
+    });
+  });
+}
+
+function generateHTMLMessageWithEmotes(messageHTML, codeToId, emoteType) {
+  const splitMessageHTML = messageHTML.split(" ");
+  for (let i = 0; i < splitMessageHTML.length; i++) {
+    const word = splitMessageHTML[i];
+    if (codeToId[word]) {
+      console.log(splitMessageHTML[i], " must be changed.");
+      let emoteImgSrc;
+      switch (emoteType) {
+        case "ffz":
+          emoteImgSrc = `<img src="https://cdn.betterttv.net/frankerfacez_emote/${codeToId[word]}/1" width=${EMOTE_SIZE_IN_PX} height=${EMOTE_SIZE_IN_PX}/>`;
+          break;
+        case "bttv":
+          emoteImgSrc = `<img src="https://cdn.betterttv.net/emote/${codeToId[word]}/1x" width=${EMOTE_SIZE_IN_PX} height=${EMOTE_SIZE_IN_PX}/>`;
+          break;
+      }
+      splitMessageHTML[i] = emoteImgSrc;
+    }
+  }
+  return splitMessageHTML.join(" ");
 }
 
 function getEmoteCodeToIdMapping(emotes) {
@@ -146,67 +201,3 @@ function getEmoteCodeToIdMapping(emotes) {
   }
   return codeToId;
 }
-
-function getMessageHTMLAfterBTTVGlobal(messageHTML) {
-  return new Promise((resolve, reject) => {
-    $.ajax({
-      url: "https://api.betterttv.net/3/cached/emotes/global",
-      type: "GET",
-      success: function (res) {
-        const bttvEmotes = res;
-        const codeToId = getEmoteCodeToIdMapping(bttvEmotes);
-
-        const splitMessageHTML = messageHTML.split(" ");
-        for (let i = 0; i < splitMessageHTML.length; i++) {
-          const word = splitMessageHTML[i];
-          if (codeToId[word]) {
-            console.log(splitMessageHTML[i], " must be changed.");
-            splitMessageHTML[
-              i
-            ] = `<img src="https://cdn.betterttv.net/emote/${codeToId[word]}/1x" width=${EMOTE_SIZE_IN_PX} height=${EMOTE_SIZE_IN_PX}/>`;
-          }
-        }
-
-        const newMessageHTML = splitMessageHTML.join(" ");
-        resolve(newMessageHTML);
-      },
-      error: function (error) {
-        reject(error);
-      },
-    });
-  });
-}
-
-function getMessageHTMLAfterFFZ(messageHTML) {
-  return new Promise((resolve, reject) => {
-    $.ajax({
-      url: `https://api.betterttv.net/3/cached/frankerfacez/users/twitch/${TWITCH_ID}`,
-      type: "GET",
-      success: function (res) {
-        console.log(res);
-        const ffzEmotes = res;
-        const codeToId = getEmoteCodeToIdMapping(ffzEmotes);
-        const splitMessageHTML = messageHTML.split(" ");
-        for (let i = 0; i < splitMessageHTML.length; i++) {
-          const word = splitMessageHTML[i];
-          if (codeToId[word]) {
-            console.log(splitMessageHTML[i], " must be changed.");
-            splitMessageHTML[
-              i
-            ] = `<img src="https://cdn.betterttv.net/frankerfacez_emote/${codeToId[word]}/1" width=${EMOTE_SIZE_IN_PX} height=${EMOTE_SIZE_IN_PX}/>`;
-          }
-        }
-        const newMessageHTML = splitMessageHTML.join(" ");
-        resolve(newMessageHTML);
-      },
-      error: function (error) {
-        reject(error);
-      },
-    });
-  });
-}
-
-/*
-TODO: 
-- escape script tag
-*/
