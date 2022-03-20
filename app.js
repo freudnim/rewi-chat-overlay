@@ -21,6 +21,11 @@ client.on("message", (channel, tags, message, self) => {
   showMessage(res);
 });
 
+client.on("clearchat", (channel) => {
+  const chatbox = document.getElementById("chatbox");
+  chatbox.innerHTML = "";
+});
+
 function getRandomArbitrary(min, max) {
   return Math.random() * (max - min) + min;
 }
