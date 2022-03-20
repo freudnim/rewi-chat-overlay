@@ -116,11 +116,7 @@ function getMessageHTMLAfterBTTV(messageHTML) {
       type: "GET",
       success: function (res) {
         const bttvEmotes = [...res.sharedEmotes, ...res.channelEmotes];
-        const codeToId = [];
-        for (emote of bttvEmotes) {
-          codeToId[emote.code] = emote.id;
-        }
-        console.log(codeToId);
+        const codeToId = getEmoteCodeToIdMapping(bttvEmotes);
 
         const splitMessageHTML = messageHTML.split(" ");
         for (let i = 0; i < splitMessageHTML.length; i++) {
@@ -143,6 +139,14 @@ function getMessageHTMLAfterBTTV(messageHTML) {
   });
 }
 
+function getEmoteCodeToIdMapping(emotes) {
+  const codeToId = [];
+  for (emote of emotes) {
+    codeToId[emote.code] = emote.id;
+  }
+  return codeToId;
+}
+
 function getMessageHTMLAfterBTTVGlobal(messageHTML) {
   return new Promise((resolve, reject) => {
     $.ajax({
@@ -150,11 +154,7 @@ function getMessageHTMLAfterBTTVGlobal(messageHTML) {
       type: "GET",
       success: function (res) {
         const bttvEmotes = res;
-        const codeToId = [];
-        for (emote of bttvEmotes) {
-          codeToId[emote.code] = emote.id;
-        }
-        console.log(codeToId);
+        const codeToId = getEmoteCodeToIdMapping(bttvEmotes);
 
         const splitMessageHTML = messageHTML.split(" ");
         for (let i = 0; i < splitMessageHTML.length; i++) {
@@ -185,11 +185,7 @@ function getMessageHTMLAfterFFZ(messageHTML) {
       success: function (res) {
         console.log(res);
         const ffzEmotes = res;
-        const codeToId = [];
-        for (emote of ffzEmotes) {
-          codeToId[emote.code] = emote.id;
-        }
-        console.log(codeToId);
+        const codeToId = getEmoteCodeToIdMapping(ffzEmotes);
         const splitMessageHTML = messageHTML.split(" ");
         for (let i = 0; i < splitMessageHTML.length; i++) {
           const word = splitMessageHTML[i];
