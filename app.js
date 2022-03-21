@@ -1,23 +1,20 @@
 const client = new tmi.Client({
-  // channels: ["rewi_art"],
-  channels: ["freudnim"],
+  channels: ["rewi_art"],
 });
-// const TWITCH_ID = 79937718;
-const TWITCH_ID = 701025846; // freudnim
+const TWITCH_ID = 79937718;
 
 const EMOTE_SIZE_IN_PX = 36;
 
 client.connect();
 
 client.on("message", (channel, tags, message, self) => {
-  console.log(tags);
   const res = {
     user: tags["display-name"],
     emotes: tags["emotes"],
     message: message,
     message: escapeHTML(message),
   };
-  showMessage(res);
+  showMessage(res, tags.subscriber);
 });
 
 client.on("clearchat", (channel) => {
@@ -29,7 +26,7 @@ function getRandomArbitrary(min, max) {
   return Math.random() * (max - min) + min;
 }
 
-function showMessage(res) {
+function showMessage(res, isSubscriber) {
   const { user, emotes, message } = res;
 
   // Create the message element
@@ -39,6 +36,9 @@ function showMessage(res) {
 
   // Add animation classes
   div.classList.add("drop-down");
+  if (isSubscriber) {
+    div.classList.add("subscriber");
+  }
 
   // Randomize location of spawn point
   div.style.position = "absolute";
