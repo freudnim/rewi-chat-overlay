@@ -1,16 +1,20 @@
 const client = new tmi.Client({
+  // channels: ["rewi_art"],
   channels: ["freudnim"],
 });
-const TWITCH_ID = 701025846;
+// const TWITCH_ID = 79937718;
+const TWITCH_ID = 701025846; // freudnim
 
 const EMOTE_SIZE_IN_PX = 36;
 
 client.connect();
 
 client.on("message", (channel, tags, message, self) => {
+  console.log(tags);
   const res = {
     user: tags["display-name"],
     emotes: tags["emotes"],
+    message: message,
     message: escapeHTML(message),
   };
   showMessage(res);
@@ -26,6 +30,8 @@ function getRandomArbitrary(min, max) {
 }
 
 function showMessage(res) {
+  const { user, emotes, message } = res;
+
   // Create the message element
   const chatbox = document.getElementById("chatbox");
   const div = document.createElement("div");
@@ -36,41 +42,49 @@ function showMessage(res) {
 
   // Randomize location of spawn point
   div.style.position = "absolute";
+  div.style.top = `${getRandomArbitrary(0, 250)}px`;
   div.style.left = `${getRandomArbitrary(0, 500)}px`;
 
-  // Insert message into DOM
-  const { user, emotes, message } = res;
+  // Randomize chat box width
+  div.style.width = `${getRandomArbitrary(300, 450)}`;
 
   // Add emotes
   const twitchHTML = getMessageHTMLForTwitch(message, { emotes });
-  div.innerHTML = twitchHTML;
   getMessageHTMLForBTTV(twitchHTML).then((data) => {
-    getMessageHTMLForBTTVGlobal(data).then((data2) => {
-      getMessageHTMLForFFZ(data2).then((data2) => {
-        div.innerHTML = data2;
+    getMessageHTMLForBTTVGlobal(data).then((data) => {
+      getMessageHTMLForFFZ(data).then((data) => {
+        div.innerHTML = data;
 
-        const firstChild = chatbox.children[0];
-        chatbox.insertBefore(div, firstChild);
+        // Add username
+        const username = document.createElement("div");
+        const textnode = document.createTextNode(user);
+        username.appendChild(textnode);
+        username.classList.add("username");
+        div.insertBefore(username, div.firstChild);
 
-        // Destroy message after 5 seconds
-        setTimeout(() => div.remove(), 5000);
+        chatbox.appendChild(div);
+
+        // Destroy message after 15 seconds
+        setTimeout(() => div.remove(), 15000);
       });
     });
   });
 }
 
 function escapeHTML(str) {
-  return str.replace(
-    /[&<>'"]/g,
-    (tag) =>
-      ({
-        "&": ".",
-        "<": ".",
-        ">": ".",
-        "'": ".",
-        '"': ".",
-      }[tag] || tag)
-  );
+  var entityMap = {
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;",
+    "/": "&#x2F;",
+    "`": "&#x60;",
+    "=": "&#x3D;",
+  };
+  return String(str).replace(/[&<>"'`=\/]/g, function (s) {
+    return entityMap[s];
+  });
 }
 
 // src: https://www.stefanjudis.com/blog/how-to-display-twitch-emotes-in-tmi-js-chat-messages/
@@ -91,7 +105,6 @@ function getMessageHTMLForTwitch(message, { emotes }) {
       parseInt(start, 10),
       parseInt(end, 10) + 1
     );
-
     stringReplacements.push({
       stringToReplace: stringToReplace,
       replacement: `<img src="https://static-cdn.jtvnw.net/emoticons/v2/${id}/default/dark/1.0" width=${EMOTE_SIZE_IN_PX} height=${EMOTE_SIZE_IN_PX}>`,
@@ -179,7 +192,6 @@ function generateHTMLMessageWithEmotes(messageHTML, codeToId, emoteType) {
   for (let i = 0; i < splitMessageHTML.length; i++) {
     const word = splitMessageHTML[i];
     if (codeToId[word]) {
-      console.log(splitMessageHTML[i], " must be changed.");
       let emoteImgSrc;
       switch (emoteType) {
         case "ffz":
@@ -196,7 +208,7 @@ function generateHTMLMessageWithEmotes(messageHTML, codeToId, emoteType) {
 }
 
 function getEmoteCodeToIdMapping(emotes) {
-  const codeToId = [];
+  const codeToId = {};
   for (emote of emotes) {
     codeToId[emote.code] = emote.id;
   }
