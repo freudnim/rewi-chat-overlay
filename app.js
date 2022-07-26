@@ -1,5 +1,6 @@
+const CHANNEL_NAME = "rewi_art";
 const client = new tmi.Client({
-  channels: ["rewi_art"],
+  channels: [CHANNEL_NAME],
 });
 const TWITCH_ID = 79937718;
 
@@ -57,19 +58,23 @@ function showMessage(res, isSubscriber) {
   getMessageHTMLForBTTV(twitchHTML).then((data) => {
     getMessageHTMLForBTTVGlobal(data).then((data) => {
       getMessageHTMLForFFZ(data).then((data) => {
-        div.innerHTML = data;
+        getMessageHTMLFor7TV(data).then((data) => {
+          getMessageHTMLFor7TVGlobal(data).then((data) => {
+            div.innerHTML = data;
 
-        // Add username
-        const username = document.createElement("div");
-        const textnode = document.createTextNode(user);
-        username.appendChild(textnode);
-        username.classList.add("username");
-        div.insertBefore(username, div.firstChild);
+            // Add username
+            const username = document.createElement("div");
+            const textnode = document.createTextNode(user);
+            username.appendChild(textnode);
+            username.classList.add("username");
+            div.insertBefore(username, div.firstChild);
 
-        chatbox.appendChild(div);
+            chatbox.appendChild(div);
 
-        // Destroy message after 15 seconds
-        setTimeout(() => div.remove(), 15000);
+            // Destroy message after 15 seconds
+            setTimeout(() => div.remove(), 15000);
+          });
+        });
       });
     });
   });
@@ -170,6 +175,49 @@ function getMessageHTMLForBTTVGlobal(messageHTML) {
   });
 }
 
+function getMessageHTMLFor7TV(messageHTML) {
+  return new Promise((resolve, reject) => {
+    $.ajax({
+      url: `https://api.7tv.app/v2/users/${CHANNEL_NAME}/emotes`,
+      type: "GET",
+      success: function (res) {
+        const codeToId = getEmoteCodeToIdMapping7TV(res);
+        const generatedHTML = generateHTMLMessageWithEmotes(
+          messageHTML,
+          codeToId,
+          "7tv"
+        );
+        resolve(generatedHTML);
+      },
+      error: function (error) {
+        reject(error);
+      },
+    });
+  });
+}
+
+function getMessageHTMLFor7TVGlobal(messageHTML) {
+  return new Promise((resolve, reject) => {
+    $.ajax({
+      url: `https://api.7tv.app/v2/emotes/global`,
+      type: "GET",
+      success: function (res) {
+        const codeToId = getEmoteCodeToIdMapping7TV(res);
+        console.log(codeToId);
+        const generatedHTML = generateHTMLMessageWithEmotes(
+          messageHTML,
+          codeToId,
+          "7tv"
+        );
+        resolve(generatedHTML);
+      },
+      error: function (error) {
+        reject(error);
+      },
+    });
+  });
+}
+
 function getMessageHTMLForFFZ(messageHTML) {
   return new Promise((resolve, reject) => {
     $.ajax({
@@ -215,6 +263,15 @@ function getEmoteCodeToIdMapping(emotes) {
   const codeToId = {};
   for (emote of emotes) {
     codeToId[emote.code] = emote.id;
+  }
+  return codeToId;
+}
+
+function getEmoteCodeToIdMapping7TV(emotes) {
+  const codeToId = {};
+  for (emote of emotes) {
+    const emoteURL = emote.urls[3][1];
+    codeToId[emote.name] = [emoteURL, emote.width[0], emote.height[0]];
   }
   return codeToId;
 }
