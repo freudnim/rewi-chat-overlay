@@ -187,6 +187,7 @@ function getMessageHTMLFor7TV(messageHTML) {
           codeToId,
           "7tv"
         );
+        console.log("messageHTML", messageHTML);
         resolve(generatedHTML);
       },
       error: function (error) {
@@ -252,6 +253,10 @@ function generateHTMLMessageWithEmotes(messageHTML, codeToId, emoteType) {
         case "bttv":
           emoteImgSrc = `<img src="https://cdn.betterttv.net/emote/${codeToId[word]}/1x" width=${EMOTE_SIZE_IN_PX} height=${EMOTE_SIZE_IN_PX}/>`;
           break;
+        case "7tv":
+          const [url, width, height] = codeToId[word];
+          emoteImgSrc = `<img src="${url}" width=${width} height=${height}/>`;
+          break;
       }
       splitMessageHTML[i] = emoteImgSrc;
     }
@@ -268,6 +273,7 @@ function getEmoteCodeToIdMapping(emotes) {
 }
 
 function getEmoteCodeToIdMapping7TV(emotes) {
+  console.log("emotes", emotes);
   const codeToId = {};
   for (emote of emotes) {
     const emoteURL = emote.urls[3][1];
