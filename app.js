@@ -8,11 +8,15 @@ const EMOTE_SIZE_IN_PX = 36;
 client.connect();
 
 client.on("message", (channel, tags, message, self) => {
+  // if message contains html tags, escape it
+  if (message.match(/<\/?[a-z][\s\S]*>/i)) {
+    message = escapeHTML(message);
+  }
   const res = {
     user: tags["display-name"],
     emotes: tags["emotes"],
     message: message,
-    message: escapeHTML(message),
+    message,
   };
   showMessage(res, tags.subscriber);
 });
