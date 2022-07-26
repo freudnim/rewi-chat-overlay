@@ -187,7 +187,6 @@ function getMessageHTMLFor7TV(messageHTML) {
           codeToId,
           "7tv"
         );
-        console.log("messageHTML", messageHTML);
         resolve(generatedHTML);
       },
       error: function (error) {
@@ -204,7 +203,6 @@ function getMessageHTMLFor7TVGlobal(messageHTML) {
       type: "GET",
       success: function (res) {
         const codeToId = getEmoteCodeToIdMapping7TV(res);
-        console.log(codeToId);
         const generatedHTML = generateHTMLMessageWithEmotes(
           messageHTML,
           codeToId,
@@ -273,7 +271,6 @@ function getEmoteCodeToIdMapping(emotes) {
 }
 
 function getEmoteCodeToIdMapping7TV(emotes) {
-  console.log("emotes", emotes);
   const codeToId = {};
   for (emote of emotes) {
     const emoteURL = emote.urls[3][1];
