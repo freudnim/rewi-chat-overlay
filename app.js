@@ -58,23 +58,23 @@ function showMessage(res, isSubscriber) {
   getMessageHTMLForBTTV(twitchHTML).then((data) => {
     getMessageHTMLForBTTVGlobal(data).then((data) => {
       getMessageHTMLForFFZ(data).then((data) => {
-        getMessageHTMLFor7TV(data).then((data) => {
-          getMessageHTMLFor7TVGlobal(data).then((data) => {
-            div.innerHTML = data;
+        // getMessageHTMLFor7TV(data).then((data) => {
+        getMessageHTMLFor7TVGlobal(data).then((data) => {
+          div.innerHTML = data;
 
-            // Add username
-            const username = document.createElement("div");
-            const textnode = document.createTextNode(user);
-            username.appendChild(textnode);
-            username.classList.add("username");
-            div.insertBefore(username, div.firstChild);
+          // Add username
+          const username = document.createElement("div");
+          const textnode = document.createTextNode(user);
+          username.appendChild(textnode);
+          username.classList.add("username");
+          div.insertBefore(username, div.firstChild);
 
-            chatbox.appendChild(div);
+          chatbox.appendChild(div);
 
-            // Destroy message after 15 seconds
-            setTimeout(() => div.remove(), 15000);
-          });
+          // Destroy message after 15 seconds
+          setTimeout(() => div.remove(), 15000);
         });
+        // });
       });
     });
   });
